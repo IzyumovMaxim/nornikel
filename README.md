@@ -145,7 +145,6 @@ web/                   React + Vite фронтенд
   src/GraphCanvas.jsx  force-directed граф (тема-зависимый)
   src/Panels.jsx       роли, фильтры, ответ, источники
   src/Export.jsx       экспорт MD / JSON-LD / PDF
-app.py                 устаревший Streamlit-прототип (не нужен для основного приложения)
 ```
 
 ## Стек
