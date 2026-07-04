@@ -1,0 +1,17 @@
+# secrets
+.env
+.streamlit/secrets.toml
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# generated artifacts / caches
+data/graph.json
+data/embeddings.npz
+data/extract_cache/
+
+# os
+.DS_Store

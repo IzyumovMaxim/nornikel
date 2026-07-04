@@ -1,0 +1,17 @@
+# Опциональный Neo4j для «настоящей» графовой БД и визуализации в Neo4j Browser.
+# Запуск:  docker compose up -d   →  http://localhost:7474  (neo4j / hackathon2024)
+services:
+  neo4j:
+    image: neo4j:5.24
+    container_name: nornikel-neo4j
+    ports:
+      - "7474:7474"   # HTTP Browser
+      - "7687:7687"   # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/hackathon2024
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  neo4j_data:

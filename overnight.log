@@ -1,0 +1,150 @@
+[2026-07-03 23:29:49] === СТАРТ. Всего документов: 2017 ===
+[2026-07-03 23:29:49] Проход 1 — извлечено 636/2017
+Всего: 2017, уже готово: 636, к извлечению: 1381, потоков: 2
+  [warn] LLM extract failed for D-0108: Expecting value: line 1 column 1 (char 0)
+  25/1381  (0.5/с, ETA 41.4 мин)  {'yandexgpt': 24, 'heuristic': 1}
+  50/1381  (0.6/с, ETA 37.4 мин)  {'yandexgpt': 49, 'heuristic': 1}
+  75/1381  (0.6/с, ETA 38.4 мин)  {'yandexgpt': 74, 'heuristic': 1}
+  100/1381  (0.6/с, ETA 38.8 мин)  {'yandexgpt': 99, 'heuristic': 1}
+  125/1381  (0.6/с, ETA 37.8 мин)  {'yandexgpt': 124, 'heuristic': 1}
+  150/1381  (0.5/с, ETA 37.5 мин)  {'yandexgpt': 149, 'heuristic': 1}
+  175/1381  (0.5/с, ETA 36.9 мин)  {'yandexgpt': 174, 'heuristic': 1}
+  200/1381  (0.5/с, ETA 35.8 мин)  {'yandexgpt': 199, 'heuristic': 1}
+  225/1381  (0.5/с, ETA 36.2 мин)  {'yandexgpt': 224, 'heuristic': 1}
+  250/1381  (0.5/с, ETA 35.1 мин)  {'yandexgpt': 249, 'heuristic': 1}
+  275/1381  (0.5/с, ETA 33.7 мин)  {'yandexgpt': 274, 'heuristic': 1}
+  300/1381  (0.5/с, ETA 35.8 мин)  {'yandexgpt': 299, 'heuristic': 1}
+  325/1381  (0.5/с, ETA 35.4 мин)  {'yandexgpt': 324, 'heuristic': 1}
+  350/1381  (0.5/с, ETA 34.7 мин)  {'yandexgpt': 349, 'heuristic': 1}
+  375/1381  (0.5/с, ETA 33.7 мин)  {'yandexgpt': 374, 'heuristic': 1}
+  400/1381  (0.5/с, ETA 33.1 мин)  {'yandexgpt': 399, 'heuristic': 1}
+  425/1381  (0.5/с, ETA 32.0 мин)  {'yandexgpt': 424, 'heuristic': 1}
+  450/1381  (0.5/с, ETA 31.9 мин)  {'yandexgpt': 449, 'heuristic': 1}
+  475/1381  (0.5/с, ETA 32.6 мин)  {'yandexgpt': 474, 'heuristic': 1}
+  500/1381  (0.5/с, ETA 32.2 мин)  {'yandexgpt': 499, 'heuristic': 1}
+  525/1381  (0.5/с, ETA 31.4 мин)  {'yandexgpt': 524, 'heuristic': 1}
+  550/1381  (0.5/с, ETA 30.6 мин)  {'yandexgpt': 549, 'heuristic': 1}
+  575/1381  (0.4/с, ETA 29.9 мин)  {'yandexgpt': 574, 'heuristic': 1}
+  600/1381  (0.4/с, ETA 29.3 мин)  {'yandexgpt': 599, 'heuristic': 1}
+  625/1381  (0.4/с, ETA 29.7 мин)  {'yandexgpt': 624, 'heuristic': 1}
+  650/1381  (0.4/с, ETA 28.9 мин)  {'yandexgpt': 649, 'heuristic': 1}
+  675/1381  (0.4/с, ETA 27.9 мин)  {'yandexgpt': 674, 'heuristic': 1}
+  700/1381  (0.4/с, ETA 27.5 мин)  {'yandexgpt': 699, 'heuristic': 1}
+  [warn] LLM extract failed for D-1349: YandexGPT completion failed: 429 rate limit
+  725/1381  (0.4/с, ETA 27.0 мин)  {'yandexgpt': 723, 'heuristic': 2}
+  [warn] LLM extract failed for D-1380: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1383: YandexGPT completion failed: 429 rate limit
+  750/1381  (0.3/с, ETA 40.4 мин)  {'yandexgpt': 746, 'heuristic': 4}
+  775/1381  (0.3/с, ETA 38.5 мин)  {'yandexgpt': 771, 'heuristic': 4}
+  [warn] LLM extract failed for D-1412: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1414: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1420: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1422: YandexGPT completion failed: 429 rate limit
+  800/1381  (0.3/с, ETA 37.8 мин)  {'yandexgpt': 792, 'heuristic': 8}
+  [warn] LLM extract failed for D-1443: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1449: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1450: YandexGPT completion failed: 429 rate limit
+  825/1381  (0.3/с, ETA 37.0 мин)  {'yandexgpt': 814, 'heuristic': 11}
+  [warn] LLM extract failed for D-1456: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1469: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1479: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1480: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1485: YandexGPT completion failed: 429 rate limit
+  850/1381  (0.2/с, ETA 36.8 мин)  {'yandexgpt': 834, 'heuristic': 16}
+  [warn] LLM extract failed for D-1496: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1510: YandexGPT completion failed: 429 rate limit
+  875/1381  (0.2/с, ETA 36.1 мин)  {'yandexgpt': 857, 'heuristic': 18}
+  [warn] LLM extract failed for D-1511: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1515: YandexGPT completion failed: 429 rate limit
+  900/1381  (0.2/с, ETA 34.3 мин)  {'yandexgpt': 880, 'heuristic': 20}
+  925/1381  (0.2/с, ETA 32.8 мин)  {'yandexgpt': 905, 'heuristic': 20}
+  [warn] LLM extract failed for D-1575: YandexGPT completion failed: 429 rate limit
+  950/1381  (0.2/с, ETA 30.9 мин)  {'yandexgpt': 929, 'heuristic': 21}
+  975/1381  (0.2/с, ETA 29.3 мин)  {'yandexgpt': 954, 'heuristic': 21}
+  [warn] LLM extract failed for D-1626: YandexGPT completion failed: 429 rate limit
+  1000/1381  (0.2/с, ETA 28.0 мин)  {'yandexgpt': 978, 'heuristic': 22}
+  [warn] LLM extract failed for D-1643: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1652: YandexGPT completion failed: 429 rate limit
+  1025/1381  (0.2/с, ETA 26.4 мин)  {'yandexgpt': 1001, 'heuristic': 24}
+  1050/1381  (0.2/с, ETA 24.5 мин)  {'yandexgpt': 1026, 'heuristic': 24}
+  [warn] LLM extract failed for D-1704: YandexGPT completion failed: 429 rate limit
+  1075/1381  (0.2/с, ETA 22.8 мин)  {'yandexgpt': 1050, 'heuristic': 25}
+  1100/1381  (0.2/с, ETA 20.9 мин)  {'yandexgpt': 1075, 'heuristic': 25}
+  [warn] LLM extract failed for D-1750: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1754: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1759: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1760: YandexGPT completion failed: 429 rate limit
+  1125/1381  (0.2/с, ETA 19.3 мин)  {'yandexgpt': 1096, 'heuristic': 29}
+  1150/1381  (0.2/с, ETA 17.3 мин)  {'yandexgpt': 1121, 'heuristic': 29}
+  1175/1381  (0.2/с, ETA 15.2 мин)  {'yandexgpt': 1146, 'heuristic': 29}
+  1200/1381  (0.2/с, ETA 13.2 мин)  {'yandexgpt': 1171, 'heuristic': 29}
+  1225/1381  (0.2/с, ETA 11.2 мин)  {'yandexgpt': 1196, 'heuristic': 29}
+  1250/1381  (0.2/с, ETA 9.3 мин)  {'yandexgpt': 1221, 'heuristic': 29}
+  1275/1381  (0.2/с, ETA 7.5 мин)  {'yandexgpt': 1246, 'heuristic': 29}
+  [warn] LLM extract failed for D-1914: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1933: YandexGPT completion failed: 429 rate limit
+  1300/1381  (0.2/с, ETA 5.8 мин)  {'yandexgpt': 1269, 'heuristic': 31}
+  [warn] LLM extract failed for D-1943: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1946: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1951: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1952: YandexGPT completion failed: 429 rate limit
+  1325/1381  (0.2/с, ETA 4.1 мин)  {'yandexgpt': 1290, 'heuristic': 35}
+  [warn] LLM extract failed for D-1962: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1965: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-1974: YandexGPT completion failed: 429 rate limit
+  1350/1381  (0.2/с, ETA 2.3 мин)  {'yandexgpt': 1312, 'heuristic': 38}
+  [warn] LLM extract failed for D-1987: YandexGPT completion failed: 429 rate limit
+  [warn] LLM extract failed for D-2008: YandexGPT completion failed: 429 rate limit
+  1375/1381  (0.2/с, ETA 0.4 мин)  {'yandexgpt': 1335, 'heuristic': 40}
+  1381/1381  (0.2/с, ETA 0.0 мин)  {'yandexgpt': 1341, 'heuristic': 40}
+Готово за 102.9 мин. Экстрактор: {'yandexgpt': 1341, 'heuristic': 40}
+[2026-07-04 01:13:00] Проход 2 — извлечено 1977/2017
+Всего: 2017, уже готово: 1977, к извлечению: 40, потоков: 2
+  [warn] LLM extract failed for D-0108: Expecting value: line 1 column 1 (char 0)
+  25/40  (0.3/с, ETA 0.8 мин)  {'yandexgpt': 24, 'heuristic': 1}
+  40/40  (0.3/с, ETA 0.0 мин)  {'yandexgpt': 39, 'heuristic': 1}
+Готово за 2.4 мин. Экстрактор: {'yandexgpt': 39, 'heuristic': 1}
+[2026-07-04 01:15:37] Проход 3 — извлечено 2016/2017
+Всего: 2017, уже готово: 2016, к извлечению: 1, потоков: 2
+  [warn] LLM extract failed for D-0108: Expecting value: line 1 column 1 (char 0)
+  1/1  (0.3/с, ETA 0.0 мин)  {'yandexgpt': 0, 'heuristic': 1}
+Готово за 0.1 мин. Экстрактор: {'yandexgpt': 0, 'heuristic': 1}
+[2026-07-04 01:15:56] Проход 4 — извлечено 2016/2017
+[2026-07-04 01:15:56] Прогресс остановился на 2016 (оставшиеся не парсятся/падают) — завершаю извлечение
+[2026-07-04 01:15:56] === Извлечено итого: 2016/2017. Собираю полный граф + эмбеддинги… ===
+cached-only: включаю 2016 уже извлечённых документов
+  эмбеддинги: 50/2016
+  эмбеддинги: 100/2016
+  эмбеддинги: 150/2016
+  эмбеддинги: 200/2016
+  эмбеддинги: 250/2016
+  эмбеддинги: 300/2016
+  эмбеддинги: 350/2016
+  эмбеддинги: 400/2016
+  эмбеддинги: 450/2016
+  эмбеддинги: 500/2016
+  эмбеддинги: 550/2016
+  эмбеддинги: 600/2016
+  эмбеддинги: 650/2016
+  эмбеддинги: 700/2016
+  эмбеддинги: 750/2016
+  эмбеддинги: 800/2016
+  эмбеддинги: 850/2016
+  эмбеддинги: 900/2016
+  эмбеддинги: 950/2016
+Traceback (most recent call last):
+  File "/Users/maximizyumov/nornikel/ingest/build_graph.py", line 191, in <module>
+    main()
+  File "/Users/maximizyumov/nornikel/ingest/build_graph.py", line 186, in main
+    G = build(use_llm=use_llm, embed=embed, cached_only=cached_only)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/maximizyumov/nornikel/ingest/build_graph.py", line 128, in build
+    _compute_embeddings(G, exp_ids)
+  File "/Users/maximizyumov/nornikel/ingest/build_graph.py", line 165, in _compute_embeddings
+    vecs.append(yandex.embed(txt, kind="doc"))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/maximizyumov/nornikel/scripts/yandex.py", line 110, in embed
+    raise RuntimeError("Yandex embedding failed after retries")
+RuntimeError: Yandex embedding failed after retries
+[2026-07-04 01:39:29] Граф собран. Перезапускаю бэкенд…
+[2026-07-04 01:39:35] === ГОТОВО. Документов: 2016/2017, узлов в графе: 4291. Бэкенд поднят. ===
