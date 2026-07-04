@@ -13,63 +13,44 @@ export function RolePicker({ roles, role, setRole }) {
   )
 }
 
-export function FiltersBar({ meta, origin, setOrigin, ranges, setRanges, open, setOpen }) {
-  const params = meta?.numericParams || {}
-  const activeCount = Object.values(ranges).filter((r) => r?.enabled).length
-  const setRange = (k, patch) => setRanges((p) => ({ ...p, [k]: { ...p[k], ...patch } }))
-
+export function FiltersBar({ meta, origin, setOrigin, yearFrom, setYearFrom,
+  yearTo, setYearTo, material, setMaterial }) {
+  const yr = meta?.yearRange || [1990, 2025]
+  const materials = meta?.facetMaterials || []
   return (
-    <div>
-      <div className="filters-bar">
-        <div className="seg">
-          {['Любое', 'Отечественная', 'Зарубежная'].map((o) => (
-            <button key={o} className={origin === o ? 'active' : ''} onClick={() => setOrigin(o)}>
-              {o === 'Любое' ? 'Все практики' : o}
-            </button>
-          ))}
-        </div>
-        <button className={`filters-toggle ${open || activeCount ? 'on' : ''}`} onClick={() => setOpen(!open)}>
-          ⚙ Числовые фильтры{activeCount ? ` · ${activeCount}` : ''}
-        </button>
+    <div className="filters-bar">
+      <div className="seg">
+        {['Любое', 'Отечественная', 'Зарубежная'].map((o) => (
+          <button key={o} className={origin === o ? 'active' : ''} onClick={() => setOrigin(o)}>
+            {o === 'Любое' ? 'Все практики' : o}
+          </button>
+        ))}
       </div>
 
-      {open && (
-        <div className="numeric-panel">
-          {Object.entries(params).map(([k, p]) => {
-            const r = ranges[k] || { enabled: false, min: p.min, max: p.max }
-            return (
-              <div className="numeric-item" key={k}>
-                <div className="head">
-                  <label className="chk">
-                    <input type="checkbox" checked={r.enabled}
-                      onChange={(e) => setRange(k, { enabled: e.target.checked, min: p.min, max: p.max })} />
-                    {p.name}{p.unit ? `, ${p.unit}` : ''}
-                  </label>
-                  {r.enabled && <span className="range-val">{r.min}–{r.max}</span>}
-                </div>
-                {r.enabled && (
-                  <>
-                    <input type="range" min={p.min} max={p.max} value={r.min}
-                      onChange={(e) => setRange(k, { min: Math.min(+e.target.value, r.max) })} />
-                    <input type="range" min={p.min} max={p.max} value={r.max}
-                      onChange={(e) => setRange(k, { max: Math.max(+e.target.value, r.min) })} />
-                  </>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      <div className="facet year-facet">
+        <span className="facet-label">Год</span>
+        <input type="number" placeholder={yr[0]} value={yearFrom ?? ''} min={yr[0]} max={yr[1]}
+          onChange={(e) => setYearFrom(e.target.value ? +e.target.value : null)} />
+        <span className="dash">–</span>
+        <input type="number" placeholder={yr[1]} value={yearTo ?? ''} min={yr[0]} max={yr[1]}
+          onChange={(e) => setYearTo(e.target.value ? +e.target.value : null)} />
+      </div>
+
+      <select className="facet material-facet" value={material}
+        onChange={(e) => setMaterial(e.target.value)}>
+        <option value="">Любой материал</option>
+        {materials.map((m) => <option key={m} value={m}>{m}</option>)}
+      </select>
     </div>
   )
 }
 
 export function Answer({ text, reports = {}, onCite }) {
   let html = marked.parse(text || '')
-  html = html.replace(/\[(R-\d+)\]/g, (m, id) => {
+  html = html.replace(/\[([RD]-\d+)\]/g, (m, id) => {
     const r = reports[id]
-    const title = r ? `${r.process} · извлечение ${r.recovery ?? '—'}% · ${r.origin}` : ''
-    return `<span class="cite" data-rep="${id}" title="${title.replace(/"/g, '')}">[${id}]</span>`
+    const tip = r ? `${r.filename || r.title || ''} · ${r.category || ''} · ${r.origin || ''}` : ''
+    return `<span class="cite" data-rep="${id}" title="${tip.replace(/"/g, '')}">[${id}]</span>`
   })
   return (
     <div className="answer"
@@ -84,15 +65,19 @@ export function SourceStrip({ table, onPick }) {
       {table.map((r, i) => (
         <div className="source-card" id={`src-${r.report}`} key={i} onClick={() => onPick?.(r.report)}>
           <div className="sc-top">
-            <span className="rep">[{r.report}]</span>
-            {r.sentiment && (
-              <span className={`pill ${r.sentiment === 'positive' ? 'pos' : 'neg'}`}>
-                {r.sentiment === 'positive' ? 'успех' : 'риск'}
-              </span>
-            )}
+            {r.category && <span className="pill cat">{r.category}</span>}
+            {r.year && <span className="sc-year">{r.year}</span>}
           </div>
-          <div className="sc-proc">{r.process}</div>
-          <div className="sc-meta">извл. {r.recovery ?? '—'}% · {r.origin}</div>
+          <a className="sc-name" href={r.url} target="_blank" rel="noreferrer"
+            title={r.filename || r.title} onClick={(e) => e.stopPropagation()}>
+            {r.filename || r.title || r.report}
+          </a>
+          <div className="sc-meta">{r.origin}{r.snippet ? ` · ${r.snippet.slice(0, 60)}…` : ''}</div>
+          {r.facts?.length > 0 && (
+            <div className="sc-facts">
+              {r.facts.slice(0, 4).map((f, k) => <span className="fact" key={k}>{f}</span>)}
+            </div>
+          )}
         </div>
       ))}
     </div>

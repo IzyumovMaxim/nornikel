@@ -3,6 +3,7 @@ import GraphCanvas from './GraphCanvas.jsx'
 import SearchBar from './SearchBar.jsx'
 import Logo from './Logo.jsx'
 import HelpButton from './HelpButton.jsx'
+import { ExportBar } from './Export.jsx'
 import {
   RolePicker, FiltersBar, Answer, SourceStrip, Contradictions, GraphLegend,
 } from './Panels.jsx'
@@ -16,11 +17,19 @@ export default function App() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [origin, setOrigin] = useState('Любое')
-  const [ranges, setRanges] = useState({})
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [yearFrom, setYearFrom] = useState(null)
+  const [yearTo, setYearTo] = useState(null)
+  const [material, setMaterial] = useState('')
   const [activeQuery, setActiveQuery] = useState('')
   const [tab, setTab] = useState('answer')     // answer | contra | graph
   const [graphMode, setGraphMode] = useState('result') // result | global
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
+  const [fast, setFast] = useState(false)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('theme', theme)
+  }, [theme])
 
   useEffect(() => { fetch('/api/meta').then((r) => r.json()).then(setMeta).catch(() => {}) }, [])
 
@@ -29,14 +38,14 @@ export default function App() {
       .then((r) => r.json()).then(setGlobalGraph).catch(() => {})
   }, [role])
 
-  const runSearch = useCallback(async (query) => {
+  const runSearch = useCallback(async (query, fastArg = fast) => {
     setActiveQuery(query); setLoading(true); setTab('answer')
     try {
       const payload = {
-        query, role, top_k: 8,
+        query, role, top_k: 8, fast: fastArg,
         origin: origin === 'Любое' ? null : origin,
-        ranges: Object.fromEntries(
-          Object.entries(ranges).filter(([, v]) => v.enabled).map(([k, v]) => [k, [v.min, v.max]])),
+        year_from: yearFrom, year_to: yearTo,
+        material: material || null,
       }
       const r = await fetch('/api/search', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -45,7 +54,7 @@ export default function App() {
       setResult(await r.json())
       setGraphMode('result')
     } catch (e) { console.error(e) } finally { setLoading(false) }
-  }, [role, origin, ranges])
+  }, [role, origin, yearFrom, yearTo, material, fast])
 
   const goHome = () => { setResult(null); setActiveQuery(''); setTab('answer') }
   const inResults = !!(result || loading)
@@ -70,7 +79,15 @@ export default function App() {
 
       <div className="header">
         <Logo onClick={goHome} />
-        {meta && <RolePicker roles={Object.keys(meta.roles)} role={role} setRole={setRole} />}
+        <div className="header-right">
+          {meta && <RolePicker roles={Object.keys(meta.roles)} role={role} setRole={setRole} />}
+          <button className="theme-toggle"
+            onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+            title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+            aria-label="Переключить тему">
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+        </div>
       </div>
 
       <div className={`main ${inResults ? 'results' : 'home'}`}>
@@ -84,11 +101,6 @@ export default function App() {
                 <button className="chip" key={ex} onClick={() => runSearch(ex)}>{ex}</button>
               ))}
             </div>
-            {meta && (
-              <div className="hero-stats">
-                {meta.stats.nodes} сущностей · {meta.stats.edges} связей · {meta.stats.contradictions} противоречий в графе
-              </div>
-            )}
           </div>
         ) : (
           <div className="results-top">
@@ -101,7 +113,9 @@ export default function App() {
             <SearchBar onSearch={runSearch} loading={loading} examples={meta?.examples || []}
               placeholder="Задать новый вопрос…" />
             <FiltersBar meta={meta} origin={origin} setOrigin={setOrigin}
-              ranges={ranges} setRanges={setRanges} open={filtersOpen} setOpen={setFiltersOpen} />
+              yearFrom={yearFrom} setYearFrom={setYearFrom}
+              yearTo={yearTo} setYearTo={setYearTo}
+              material={material} setMaterial={setMaterial} />
 
             {loading || !result ? (
               <div className="skeleton-wrap">
@@ -125,7 +139,30 @@ export default function App() {
 
             <div className="tab-content">
               {tab === 'answer' && (
-                <Answer text={result.answer} reports={reportsMap} onCite={flashSource} />
+                <>
+                  {result.meta && (
+                    <div className="meta-bar">
+                      <span className="mb-item">Источников: <b>{result.meta.sources}</b></span>
+                      <span className="mb-item">Уверенность: <b>{result.meta.confidence}</b></span>
+                      {result.meta.years && (
+                        <span className="mb-item">Актуальность: <b>{result.meta.years[0]}–{result.meta.years[1]}</b></span>
+                      )}
+                      {result.meta.constraints && (
+                        <span className="mb-item">Ограничения: <b>{result.meta.constraints}</b></span>
+                      )}
+                      {result.meta.cached && <span className="mb-item mb-cache">из кэша</span>}
+                      <span className="mb-spacer" />
+                      <div className="seg mode-seg">
+                        <button className={!fast ? 'active' : ''}
+                          onClick={() => { setFast(false); runSearch(activeQuery, false) }}>Точно</button>
+                        <button className={fast ? 'active' : ''}
+                          onClick={() => { setFast(true); runSearch(activeQuery, true) }}>Быстро</button>
+                      </div>
+                    </div>
+                  )}
+                  <ExportBar query={activeQuery} result={result} />
+                  <Answer text={result.answer} reports={reportsMap} onCite={flashSource} />
+                </>
               )}
 
               {tab === 'contra' && (
@@ -140,7 +177,7 @@ export default function App() {
                     <button className={graphMode === 'result' ? 'active' : ''} onClick={() => setGraphMode('result')}>Результат</button>
                     <button className={graphMode === 'global' ? 'active' : ''} onClick={() => setGraphMode('global')}>Весь граф</button>
                   </div>
-                  <GraphCanvas data={graphData} focusIds={focus} />
+                  <GraphCanvas data={graphData} focusIds={focus} theme={theme} />
                   {meta && <GraphLegend nodeTypes={meta.nodeTypes} activeTypes={activeTypes} />}
                 </div>
               )}

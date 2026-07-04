@@ -10,11 +10,13 @@
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -26,6 +28,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
                    allow_headers=["*"])
 
 kg = get_graph()
+
+# каталог с исходными документами (для отдачи оригиналов по ссылке)
+SRC_BASE = os.environ.get(
+    "NORNIKEL_SRC", "/Users/maximizyumov/Downloads/Задача 2. Научный клубок")
 
 EXAMPLES = [
     "Обогащение медно-никелевого сырья флотацией",
@@ -51,12 +57,17 @@ def meta():
     roles = {r: {"types": sorted(v["types"]),
                  "see_contradictions": v["see_contradictions"]}
              for r, v in ROLES.items()}
+    # диапазон годов и материалы-фасеты — по новому корпусу
+    years = sorted({m.get("year") for m in kg.chunks.doc_meta.values()} - {None})
+    facets = kg.gz.facets(top=40)
     return {
         "nodeTypes": {k: {"label": v["label"], "color": v["color"]}
                       for k, v in NODE_TYPES.items()},
         "numericParams": ranges,
         "roles": roles,
         "examples": EXAMPLES,
+        "yearRange": [years[0], years[-1]] if years else None,
+        "facetMaterials": facets["Material"],
         "stats": {"nodes": kg.G.number_of_nodes(), "edges": kg.G.number_of_edges(),
                   "contradictions": len(kg.contradictions())},
     }
@@ -78,47 +89,82 @@ class SearchReq(BaseModel):
     origin: str | None = None
     ranges: dict[str, list[float]] = {}
     top_k: int = 8
+    fast: bool = False        # быстрый режим: без expand/rerank (1 LLM-вызов)
+    year_from: int | None = None
+    year_to: int | None = None
+    material: str | None = None
+
+
+from collections import OrderedDict  # noqa: E402
+from query import constraints as _cons  # noqa: E402
+
+_CACHE: "OrderedDict[tuple, dict]" = OrderedDict()
+_CACHE_MAX = 128
 
 
 @app.post("/api/search")
 def search(req: SearchReq):
-    at = _allowed(req.role)
-    ranges = {k: (v[0], v[1]) for k, v in req.ranges.items() if len(v) == 2}
     origin = req.origin if req.origin in ("Отечественная", "Зарубежная") else None
-    hits = kg.search_experiments(req.query, top_k=req.top_k, ranges=ranges,
-                                 origin=origin)
-    contexts = [kg.experiment_context(nid) for nid, _ in hits]
 
-    answer = kg.answer(req.query, contexts) if hits else \
-        "По заданным фильтрам ничего не найдено — ослабьте числовые ограничения."
+    key = (req.query.strip().lower(), origin, req.top_k, req.fast,
+           req.year_from, req.year_to, req.material)
+    if key in _CACHE:
+        cached = dict(_CACHE[key])
+        cached["meta"] = {**cached.get("meta", {}), "cached": True}
+        _CACHE.move_to_end(key)
+        return cached
 
-    ids = [nid for nid, _ in hits]
-    sub = kg.subgraph_for(ids, at) if ids else kg.G.subgraph([])
-    payload = kg.graph_payload(node_ids=list(sub.nodes()), allowed_types=at)
+    # быстрый режим: только BM25 + синтез; точный: expand → BM25 → LLM-реранк
+    hits = kg.search_chunks(req.query, top_k=6 if req.fast else max(req.top_k, 8),
+                            top_n=60, per_doc=3, origin=origin,
+                            expand=not req.fast, use_rerank=not req.fast,
+                            year_from=req.year_from, year_to=req.year_to,
+                            material=req.material)
 
-    # таблица найденного
+    answer = kg.answer_from_chunks(req.query, hits, brief=req.fast) if hits else \
+        "По запросу ничего не найдено — переформулируйте вопрос."
+
+    # таблица источников: документ + категория + фрагмент, в порядке реранка
     table = []
-    for (nid, score), c in zip(hits, contexts):
+    for rank, h in enumerate(hits, 1):
+        path = h.get("path", "")
         table.append({
-            "report": (c.get("publication") or "").replace("EXP:", ""),
-            "score": round(score, 3),
-            "process": c.get("process"),
-            "materials": c["materials"],
-            "recovery": c["params"].get("recovery"),
-            "temperature": c["params"].get("temperature"),
-            "origin": c.get("origin"),
-            "sentiment": (c.get("conclusion") or {}).get("sentiment"),
+            "report": h["doc_id"],
+            "rank": rank,
+            "title": h.get("title", ""),
+            "filename": os.path.basename(path) if path else "",
+            "category": h.get("category"),
+            "origin": h.get("origin"),
+            "year": h.get("year"),
+            "path": path,
+            "url": f"/api/doc/{h['doc_id']}",
+            "snippet": " ".join(h["text"].split())[:240],
+            "facts": _cons.extract_facts(h["text"]),   # извлечённые числовые факты
         })
 
-    # релевантные противоречия
-    contradictions = []
-    if ROLES.get(req.role, {}).get("see_contradictions", True):
-        q_proc = {(c.get("process") or "").lower() for c in contexts}
-        q_mat = {m.lower() for c in contexts for m in c["materials"]}
-        allc = kg.contradictions()
-        contradictions = [r for r in allc
-                          if r["process"] in q_proc or r["material"] in q_mat] or allc
+    # подграф документ↔сущность по НОВОМУ корпусу (газеттир по извлечённым чанкам)
+    payload = kg.result_graph(hits) if hits else {"nodes": [], "links": []}
 
-    focus = [nid for nid, _ in hits]
-    return {"answer": answer, "graph": payload, "table": table,
-            "contradictions": contradictions, "focus": focus}
+    meta = kg.result_meta(req.query, hits)
+    meta["mode"] = "fast" if req.fast else "accurate"
+    meta["cached"] = False
+
+    resp = {"answer": answer, "graph": payload, "table": table,
+            "contradictions": [], "focus": [], "meta": meta}
+    if hits:
+        _CACHE[key] = resp
+        if len(_CACHE) > _CACHE_MAX:
+            _CACHE.popitem(last=False)
+    return resp
+
+
+@app.get("/api/doc/{doc_id}")
+def get_doc(doc_id: str):
+    """Отдаёт оригинальный файл документа по его ID (для ссылки-источника)."""
+    meta = kg.chunks.doc_meta.get(doc_id)
+    if not meta or not meta.get("path"):
+        raise HTTPException(status_code=404, detail="Документ не найден")
+    abs_path = os.path.join(SRC_BASE, meta["path"])
+    if not os.path.isfile(abs_path):
+        raise HTTPException(status_code=404, detail="Файл недоступен")
+    return FileResponse(abs_path, filename=os.path.basename(abs_path))

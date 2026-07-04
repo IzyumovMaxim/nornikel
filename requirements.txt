@@ -1,10 +1,25 @@
+# --- Ядро: API + поиск (обязательно для запуска) ---
 fastapi==0.115.0
 uvicorn==0.30.6
-streamlit==1.39.0
-networkx==3.3
-pyvis==0.3.2
-numpy==1.26.4
-pandas==2.2.2
-requests==2.32.3
+pydantic==2.9.2
 python-dotenv==1.0.1
+requests==2.32.3
+numpy==2.5.0
+scipy==1.18.0
+scikit-learn==1.9.0
+networkx==3.3
+
+# --- Парсинг исходных документов (нужно для ingest: scripts/build_corpus_full.py) ---
+PyMuPDF==1.28.0
+python-docx==1.2.0
+openpyxl==3.1.5
+xlrd==2.0.2
+python-pptx==1.0.2
+
+# --- Опционально: экспорт графа в Neo4j (scripts/load_neo4j.py) ---
 neo4j==5.24.0
+
+# --- Опционально: устаревший Streamlit-прототип (app.py) ---
+streamlit==1.39.0
+pyvis==0.3.2
+pandas==2.2.2

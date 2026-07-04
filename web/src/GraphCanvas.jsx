@@ -7,12 +7,21 @@ export const MUTED = {
   Process: '#8b7aa0', Equipment: '#a87070', Person: '#6c918d', Conclusion: '#a89a5c',
 }
 
-export default function GraphCanvas({ data, focusIds = [] }) {
+// цвета canvas зависят от темы (CSS-переменные сюда не долетают)
+const THEME = {
+  dark:  { bg: '#111419', label: 'rgba(232,236,241,0.82)', ring: 'rgba(255,255,255,.75)',
+           link: 'rgba(255,255,255,0.1)', linkDim: 'rgba(255,255,255,0.03)' },
+  light: { bg: '#eef1f6', label: 'rgba(26,34,48,0.85)', ring: 'rgba(15,23,42,.55)',
+           link: 'rgba(15,23,42,0.14)', linkDim: 'rgba(15,23,42,0.04)' },
+}
+
+export default function GraphCanvas({ data, focusIds = [], theme = 'dark' }) {
   const fgRef = useRef()
   const wrapRef = useRef()
   const [size, setSize] = useState({ w: 800, h: 440 })
   const [hover, setHover] = useState(null)
   const focus = useMemo(() => new Set(focusIds), [focusIds])
+  const tc = THEME[theme] || THEME.dark
 
   useEffect(() => {
     const el = wrapRef.current
@@ -53,17 +62,17 @@ export default function GraphCanvas({ data, focusIds = [] }) {
     ctx.fillStyle = color; ctx.fill(); ctx.shadowBlur = 0
     if (isFocus) {
       ctx.beginPath(); ctx.arc(node.x, node.y, r + 3, 0, 2 * Math.PI)
-      ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.3 / scale; ctx.stroke()
+      ctx.strokeStyle = tc.ring; ctx.lineWidth = 1.3 / scale; ctx.stroke()
     }
     if ((scale > 1.5 || node.id === hover || isFocus) && !dim) {
       const label = node.label.length > 24 ? node.label.slice(0, 23) + '…' : node.label
       ctx.font = `${10.5 / scale}px -apple-system, sans-serif`
       ctx.textAlign = 'center'; ctx.textBaseline = 'top'
-      ctx.fillStyle = 'rgba(232,236,241,0.82)'
+      ctx.fillStyle = tc.label
       ctx.fillText(label, node.x, node.y + r + 2)
     }
     ctx.globalAlpha = 1
-  }, [isDim, focus, hover])
+  }, [isDim, focus, hover, tc])
 
   return (
     <div style={{ position: 'absolute', inset: 0 }} ref={wrapRef}>
@@ -72,7 +81,7 @@ export default function GraphCanvas({ data, focusIds = [] }) {
         width={size.w}
         height={size.h}
         graphData={data}
-        backgroundColor="#111419"
+        backgroundColor={tc.bg}
         nodeRelSize={5}
         nodeCanvasObject={drawNode}
         nodePointerAreaPaint={(node, color, ctx) => {
@@ -84,8 +93,8 @@ export default function GraphCanvas({ data, focusIds = [] }) {
           if (l.contradiction) return 'rgba(235,107,115,0.85)'
           const s = typeof l.source === 'object' ? l.source.id : l.source
           const t = typeof l.target === 'object' ? l.target.id : l.target
-          if (hover && s !== hover && t !== hover) return 'rgba(255,255,255,0.03)'
-          return 'rgba(255,255,255,0.1)'
+          if (hover && s !== hover && t !== hover) return tc.linkDim
+          return tc.link
         }}
         linkWidth={(l) => (l.contradiction ? 2 : 0.8)}
         linkDirectionalParticles={(l) => (l.contradiction ? 2 : 0)}

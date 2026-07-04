@@ -8,10 +8,17 @@ __pycache__/
 .venv/
 venv/
 
+# node
+web/node_modules/
+
 # generated artifacts / caches
 data/graph.json
 data/embeddings.npz
 data/extract_cache/
+# крупные сгенерированные данные (доставляются отдельным архивом, >100MB для GitHub)
+data/corpus_full.json
+data/bm25_index.pkl
+data/embed_cache/
 
 # os
 .DS_Store

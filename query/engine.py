@@ -18,6 +18,10 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts import yandex  # noqa: E402
 from domain.ontology import NODE_TYPES, NUMERIC_PARAMS  # noqa: E402
+from query.retrieval import get_index  # noqa: E402
+from query import rerank  # noqa: E402
+from query import constraints as cons_mod  # noqa: E402
+from query.entities import get_gazetteer  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -46,6 +50,8 @@ class KnowledgeGraph:
         vecs = emb["vectors"].astype(np.float32)
         self.vectors = vecs / (np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-9)
         self.idx = {nid: i for i, nid in enumerate(self.ids)}
+        self.chunks = get_index()  # чанк-ретривер по сырому тексту (BM25)
+        self.gz = get_gazetteer()  # газеттир сущностей для подграфа и фасетов
 
     # ---------- поиск ----------
     def _passes_numeric(self, exp_id: str, ranges: dict) -> bool:
@@ -79,6 +85,71 @@ class KnowledgeGraph:
             if len(out) >= top_k:
                 break
         return out
+
+    def search_chunks(self, query: str, *, top_k: int = 8, top_n: int = 60,
+                      per_doc: int = 3, origin: str | None = None,
+                      expand: bool = True, use_rerank: bool = True,
+                      year_from: int | None = None, year_to: int | None = None,
+                      material: str | None = None):
+        """Поиск: [expand] → BM25 (top_n) → фильтры/буст → [LLM-реранк] → top_k.
+
+        expand/use_rerank отключаемы для «быстрого режима» (1 LLM-вызов вместо 3).
+        Фасеты (год, материал) и числовые ограничения фильтруют/буста́т мягко —
+        с фолбэком на нефильтрованную выдачу, чтобы не обнулить результат.
+        """
+        cons = cons_mod.parse_constraints(query)
+        q = rerank.expand_query(query) if expand else query
+        if material:                       # фасет-материал усиливает запрос к BM25
+            q = f"{q} {material}"
+        candidates = self.chunks.search(q, top_n=top_n, per_doc=per_doc, origin=origin)
+
+        # фасет по году (мягко: если всё отсеялось — не фильтруем)
+        if year_from or year_to:
+            def _in_year(h):
+                y = h.get("year")
+                return y is not None and (not year_from or y >= year_from) \
+                    and (not year_to or y <= year_to)
+            filtered = [h for h in candidates if _in_year(h)]
+            if filtered:
+                candidates = filtered
+
+        if cons:
+            candidates.sort(
+                key=lambda h: cons_mod.chunk_matches(h["text"], cons), reverse=True)
+        if use_rerank:
+            return rerank.llm_rerank(query, candidates, top_k=top_k)
+        return candidates[:top_k]
+
+    def result_graph(self, hits: list[dict]) -> dict:
+        """Подграф документ↔сущность по извлечённым чанкам (новый корпус)."""
+        # объединяем чанки по документу
+        by_doc: dict[str, dict] = {}
+        for h in hits:
+            d = by_doc.setdefault(h["doc_id"], {
+                "doc_id": h["doc_id"], "title": h.get("title"),
+                "origin": h.get("origin"), "year": h.get("year"), "text": ""})
+            d["text"] += " " + h["text"]
+        return self.gz.build_subgraph(list(by_doc.values()))
+
+    def result_meta(self, query: str, hits: list[dict]) -> dict:
+        """Метаданные ответа: источники, происхождение, уверенность, ограничения."""
+        docs = {h["doc_id"] for h in hits}
+        origins = {}
+        for did in docs:
+            o = self.chunks.doc_meta.get(did, {}).get("origin")
+            origins[o] = origins.get(o, 0) + 1
+        n = len(docs)
+        confidence = "высокая" if n >= 4 else "средняя" if n >= 2 else "низкая"
+        cons = cons_mod.parse_constraints(query)
+        years = sorted({self.chunks.doc_meta.get(d, {}).get("year")
+                        for d in docs} - {None})
+        return {
+            "sources": n, "chunks": len(hits), "origins": origins,
+            "confidence": confidence,
+            "constraints": cons_mod.describe(cons) if cons else None,
+            "years": [years[0], years[-1]] if years else None,   # актуализация
+            "freshest": years[-1] if years else None,
+        }
 
     # ---------- контекст ----------
     def experiment_context(self, exp_id: str) -> dict:
@@ -176,6 +247,58 @@ class KnowledgeGraph:
             "Раздели отечественную и зарубежную практику, если это уместно. "
             "Не выдумывай факты вне приведённых записей.")
         return yandex.complete(prompt, temperature=0.3, max_tokens=1200)
+
+    def answer_from_chunks(self, query: str, chunks: list[dict],
+                           brief: bool = False) -> str:
+        """Синтез обзора из реальных абзацев отчётов.
+
+        brief=True (быстрый режим): только связный обзор, меньше токенов (~3-4с).
+        brief=False: полный ответ — обзор + консенсус/разногласия + пробелы +
+        рекомендации, с учётом числовых требований и разделением отеч./зарубеж.
+        """
+        if not chunks:
+            return ("По запросу не найдено релевантных фрагментов в отчётах. "
+                    "Переформулируйте запрос или уточните термины.")
+        if not yandex.available():
+            return "\n\n".join(
+                f"**[{c['doc_id']}]** {c['text'][:400]}…" for c in chunks[:6])
+        blocks = []
+        for c in chunks:
+            snippet = " ".join(c["text"].split())[:700]
+            blocks.append(f"[{c['doc_id']}] (origin: {c.get('origin')}, "
+                          f"year: {c.get('year')}): {snippet}")
+        context = "\n\n".join(blocks)
+        cons = cons_mod.parse_constraints(query)
+        cons_line = (f"\nЧисловые требования запроса: {cons_mod.describe(cons)}. "
+                     "Явно отметь, какие источники им удовлетворяют.\n" if cons else "")
+
+        if brief:
+            prompt = (
+                f"Вопрос эксперта: {query}\n{cons_line}\n"
+                f"Фрагменты отчётов R&D (в скобках — ID):\n{context}\n\n"
+                "Дай краткий связный ответ строго по фрагментам, Markdown, без "
+                "заголовков. После каждого утверждения — ссылка [D-XXXX]. "
+                "Ключевые числа выделяй жирным. Не выдумывай.")
+            return yandex.complete(prompt, temperature=0.3, max_tokens=800)
+
+        prompt = (
+            f"Вопрос эксперта: {query}\n{cons_line}\n"
+            f"Ниже — релевантные фрагменты из отчётов R&D (в квадратных скобках — "
+            f"ID отчёта):\n{context}\n\n"
+            "Составь ответ строго по приведённым фрагментам, в Markdown, без "
+            "заголовков уровня #. После каждого утверждения — ссылка [D-XXXX]. "
+            "Структура ответа:\n"
+            "1) **Обзор** — суть по вопросу, ключевые числа/условия выделяй жирным, "
+            "раздели отечественную и зарубежную практику, если уместно.\n"
+            "2) **Консенсус и разногласия** — в чём источники согласны, где "
+            "противоречат (если противоречий нет — так и напиши).\n"
+            "3) **Пробелы** — чего в найденных источниках не хватает для полного "
+            "ответа; какие комбинации материал/режим/условие не освещены; что "
+            "описано только в отечественной или только в зарубежной практике.\n"
+            "4) **Рекомендации** — смежные темы и потенциально применимые решения "
+            "из приведённых фрагментов.\n"
+            "Не выдумывай факты вне фрагментов.")
+        return yandex.complete(prompt, temperature=0.3, max_tokens=1800)
 
     # ---------- сериализация для фронтенда ----------
     def _node_payload(self, nid: str) -> dict:
